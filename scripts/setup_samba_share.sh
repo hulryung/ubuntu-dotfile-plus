@@ -22,9 +22,13 @@ SHARE_NAME="${USER_NAME}"
 SMB_CONF="/etc/samba/smb.conf"
 BACKUP_SUFFIX="$(date +%Y%m%d_%H%M%S)"
 
+# Get the primary IP address
+PRIMARY_IP=$(ip route get 1 | awk '{print $7;exit}')
+
 echo "[i] Target user      : ${USER_NAME}"
 echo "[i] Home directory   : ${HOME_DIR}"
 echo "[i] Samba share name : ${SHARE_NAME}"
+echo "[i] IP address       : ${PRIMARY_IP}"
 echo
 
 # ---------------------------------------------------------------------------
@@ -82,7 +86,7 @@ systemctl restart smbd nmbd
 
 echo
 echo "[✓] 완료!"
-echo "  • Windows 탐색기 → \\\\<Ubuntu_IP>\\${SHARE_NAME}"
+echo "  • Windows 탐색기 → \\\\${PRIMARY_IP}\\${SHARE_NAME}"
 echo "  • 사용자명       : ${USER_NAME}"
 echo "  • 암호           : 방금 설정한 Samba 암호"
 echo
