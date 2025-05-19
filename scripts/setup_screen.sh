@@ -1,35 +1,89 @@
 #!/usr/bin/env bash
-# setup_screen.sh - Configure GNU Screen with custom settings
+# setup_screen.sh
+#
+# Purpose : Install and configure GNU Screen with basic settings
+# Usage   : sudo bash setup_screen.sh
 
 set -euo pipefail
-IFS=$'\n\t'
 
-# Repository root
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)"
-CONFIG_FILE="${REPO_ROOT}/config/screenrc"
+# ---------------------------------------------------------------------------
+# 1. Install screen package
+# ---------------------------------------------------------------------------
+echo "[+] Installing GNU Screen..."
+apt-get update -qq
+DEBIAN_FRONTEND=noninteractive apt-get install -y screen >/dev/null
 
-# Ensure config directory exists
-mkdir -p "${REPO_ROOT}/config"
+# ---------------------------------------------------------------------------
+# 2. Create default screen configuration
+# ---------------------------------------------------------------------------
+SCREENRC="/etc/screenrc"
+if [[ ! -f "${SCREENRC}.orig" ]]; then
+    echo "[+] Backing up original screenrc"
+    cp "${SCREENRC}" "${SCREENRC}.orig"
+fi
 
-# Create or update .screenrc
-if [[ ! -f "$HOME/.screenrc" || $(stat -c %s "$HOME/.screenrc") -eq 0 ]]; then
-    echo "[+] Creating .screenrc with custom configuration"
-    cp "$CONFIG_FILE" "$HOME/.screenrc"
+echo "[+] Creating new screen configuration..."
+cat > "${SCREENRC}" <<EOF
+# Screen configuration file
+
+# Disable the startup message
+startup_message off
+
+# Set a large scrollback buffer
+defscrollback 10000
+
+# Display a status line at the bottom
+hardstatus alwayslastline
+hardstatus string '%{= kG}[ %{G}%H %{g}][%= %{= kw}%?%-Lw%?%{r}(%{W}%n*%f%t%?(%u)%?%{r})%{w}%?%+Lw%?%?%= %{g}][%{B} %m-%d %{W}%c %{g}]'
+
+# Enable mouse scrolling and scroll bar
+termcapinfo xterm* ti@:te@
+
+# Default windows
+screen -t Shell  0 bash
+screen -t Shell2 1 bash
+
+# Switch to window 0
+select 0
+
+# Set default shell
+shell -$SHELL
+EOF
+
+echo "[+] Setting permissions..."
+chmod 644 "${SCREENRC}"
+
+# ---------------------------------------------------------------------------
+# 3. Create user-specific configuration
+# ---------------------------------------------------------------------------
+if [[ -n "${SUDO_USER:-}" && "${SUDO_USER}" != "root" ]]; then
+    USER_NAME="${SUDO_USER}"
 else
-    echo "[+] Updating .screenrc with custom configuration"
-    cp "$HOME/.screenrc" "$HOME/.screenrc.bak"
-    cp "$CONFIG_FILE" "$HOME/.screenrc"
+    USER_NAME="$(whoami)"
 fi
 
-# Make sure .screenrc is readable by the user
-chmod 644 "$HOME/.screenrc"
+USER_SCREENRC="/home/${USER_NAME}/.screenrc"
 
-# Install screen if not already installed
-if ! command -v screen &> /dev/null; then
-    echo "[+] Installing screen package"
-    sudo apt-get update
-    sudo apt-get install -y screen
+if [[ ! -f "${USER_SCREENRC}" ]]; then
+    echo "[+] Creating user-specific screen configuration..."
+    cat > "${USER_SCREENRC}" <<EOF
+# User-specific screen configuration
+source /etc/screenrc
+
+# Additional user preferences can be added here
+EOF
+    chown "${USER_NAME}:${USER_NAME}" "${USER_SCREENRC}"
+    chmod 644 "${USER_SCREENRC}"
 fi
 
-# Print completion message
-echo "[✓] Screen configuration complete!"
+echo
+echo "[✓] Screen setup complete!"
+echo "  • Start a new screen session: screen"
+echo "  • Reattach to existing session: screen -r"
+echo "  • List sessions: screen -ls"
+echo "  • Basic commands:"
+echo "    - Create new window: Ctrl-a c"
+echo "    - Next window: Ctrl-a n"
+echo "    - Previous window: Ctrl-a p"
+echo "    - Detach: Ctrl-a d"
+echo "    - Help: Ctrl-a ?"

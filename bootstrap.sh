@@ -26,10 +26,12 @@ declare -A MODULE_DESCRIPTIONS=(
   ["setup_kubernetes"]="Install and configure Kubernetes tools"
   ["setup_development"]="Install development tools and IDEs"
   ["setup_system"]="Configure system settings and optimizations"
+  ["setup_screen"]="Install and configure GNU Screen"
 )
 
 DEFAULT_MODULES=(
   "setup_samba_share"
+  "setup_screen"
 )
 
 RUN_MODULES=("${DEFAULT_MODULES[@]}")
@@ -65,44 +67,69 @@ show_available_modules() {
 
 # Function for interactive module selection
 interactive_selection() {
-  show_available_modules
-  echo "Select modules to install (space to select, enter to confirm):"
+  echo "=== Available Modules ==="
+  echo
+  local i=1
+  declare -A module_index
+  for module in "${!MODULE_DESCRIPTIONS[@]}"; do
+    printf "%2d) %s - %s\n" $i "$module" "${MODULE_DESCRIPTIONS[$module]}"
+    module_index[$i]=$module
+    ((i++))
+  done
+  echo
   
-  # Create temporary file for selected modules
-  local temp_file=$(mktemp)
-  
-  # Use whiptail for interactive selection if available
-  if command -v whiptail >/dev/null 2>&1; then
-    local options=()
-    for module in "${!MODULE_DESCRIPTIONS[@]}"; do
-      options+=("$module" "${MODULE_DESCRIPTIONS[$module]}" "OFF")
-    done
+  local selected=()
+  while true; do
+    echo "Currently selected: ${selected[*]:-none}"
+    echo
+    echo "Commands:"
+    echo "  Enter number to toggle module"
+    echo "  'a' to select all"
+    echo "  'n' to select none"
+    echo "  'i' to install selected modules"
+    echo "  'q' to quit"
+    echo
+    read -p "Enter choice: " choice
     
-    whiptail --title "Module Selection" \
-             --checklist "Choose modules to install:" \
-             20 60 10 \
-             "${options[@]}" 2> "$temp_file"
-    
-    RUN_MODULES=($(cat "$temp_file" | tr -d '"'))
-  else
-    # Fallback to simple text-based selection
-    echo "Please enter module names (one per line, empty line to finish):"
-    while read -r module; do
-      [ -z "$module" ] && break
-      if [[ -n "${MODULE_DESCRIPTIONS[$module]:-}" ]]; then
-        RUN_MODULES+=("$module")
-      else
-        echo "Invalid module: $module"
-      fi
-    done
-  fi
-  
-  rm -f "$temp_file"
-  
-  if [ ${#RUN_MODULES[@]} -eq 0 ]; then
-    echo "No modules selected. Exiting."
-    exit 0
-  fi
+    case $choice in
+      [1-9]|[1-9][0-9])
+        if [[ -n "${module_index[$choice]}" ]]; then
+          module="${module_index[$choice]}"
+          if [[ " ${selected[*]} " =~ " ${module} " ]]; then
+            # Remove from selected
+            selected=(${selected[@]/$module/})
+          else
+            # Add to selected
+            selected+=("$module")
+          fi
+        else
+          echo "Invalid number. Please try again."
+        fi
+        ;;
+      [aA])
+        selected=(${!MODULE_DESCRIPTIONS[@]})
+        ;;
+      [nN])
+        selected=()
+        ;;
+      [iI])
+        if [ ${#selected[@]} -eq 0 ]; then
+          echo "No modules selected. Please select at least one module."
+          continue
+        fi
+        RUN_MODULES=("${selected[@]}")
+        return 0
+        ;;
+      [qQ])
+        echo "Installation cancelled."
+        exit 0
+        ;;
+      *)
+        echo "Invalid option. Please try again."
+        ;;
+    esac
+    echo
+  done
 }
 
 DRY_RUN=false
