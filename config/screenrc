@@ -33,14 +33,15 @@ vbell off
 shelltitle "$ | bash"
 
 # ───────────────────────────────
-# 🕒 Dynamic time update (every 1 second)
+# 🕒 Dynamic updates (every 1 second)
 backtick 1 1 1 date '+%Y-%m-%d %H:%M:%S'
+backtick 2 1 1 sh -c 'cut -d " " -f1-3 /proc/loadavg'
 
 # ───────────────────────────────
 # 🧭 Dynamic status line (bottom)
 hardstatus on
 hardstatus alwayslastline
-hardstatus string "%{= kB}%H %{= kw}[%= %{= kR}%l%{= kw} | %{= kC}%1`%{= kw} %=%{= kW}%n %t%{-}]"
+hardstatus string "%{= kB}%H %{= kw}[%= %{= kR}%2`%{= kw} | %{= kC}%1`%{= kw} %=%{= kW}%n %t%{-}]"
 
 # ───────────────────────────────
 # ⌨️ Key Bindings – Vim-style navigation for copy mode
