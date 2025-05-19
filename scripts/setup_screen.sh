@@ -6,6 +6,10 @@
 
 set -euo pipefail
 
+# Get repository root directory
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)"
+CONFIG_SCREENRC="${REPO_ROOT}/config/screenrc"
+
 # ---------------------------------------------------------------------------
 # 1. Check and Install screen package if needed
 # ---------------------------------------------------------------------------
@@ -28,18 +32,25 @@ else
 fi
 
 USER_SCREENRC="/home/${USER_NAME}/.screenrc"
+BACKUP_SUFFIX="$(date +%Y%m%d_%H%M%S).orig"
 
-if [[ ! -f "${USER_SCREENRC}" ]]; then
-    echo "[+] Creating user-specific screen configuration..."
-    cat > "${USER_SCREENRC}" <<EOF
-# User-specific screen configuration
-source /etc/screenrc
-
-# Additional user preferences can be added here
-EOF
-    chown "${USER_NAME}:${USER_NAME}" "${USER_SCREENRC}"
-    chmod 644 "${USER_SCREENRC}"
+# Check if config file exists in repository
+if [[ ! -f "${CONFIG_SCREENRC}" ]]; then
+    echo "[!] Error: Configuration file not found at ${CONFIG_SCREENRC}"
+    exit 1
 fi
+
+# Backup existing configuration if it exists
+if [[ -f "${USER_SCREENRC}" ]]; then
+    echo "[+] Backing up existing configuration to ${USER_SCREENRC}.${BACKUP_SUFFIX}"
+    cp "${USER_SCREENRC}" "${USER_SCREENRC}.${BACKUP_SUFFIX}"
+fi
+
+# Copy repository configuration
+echo "[+] Installing screen configuration from ${CONFIG_SCREENRC}"
+cp "${CONFIG_SCREENRC}" "${USER_SCREENRC}"
+chown "${USER_NAME}:${USER_NAME}" "${USER_SCREENRC}"
+chmod 644 "${USER_SCREENRC}"
 
 echo
 echo "[✓] Screen setup complete!"
@@ -52,3 +63,8 @@ echo "    - Next window: Ctrl-a n"
 echo "    - Previous window: Ctrl-a p"
 echo "    - Detach: Ctrl-a d"
 echo "    - Help: Ctrl-a ?"
+if [[ -f "${USER_SCREENRC}.${BACKUP_SUFFIX}" ]]; then
+    echo
+    echo "  • Your previous configuration was backed up to:"
+    echo "    ${USER_SCREENRC}.${BACKUP_SUFFIX}"
+fi
