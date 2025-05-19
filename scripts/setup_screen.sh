@@ -7,11 +7,16 @@
 set -euo pipefail
 
 # ---------------------------------------------------------------------------
-# 1. Install screen package
+# 1. Check and Install screen package if needed
 # ---------------------------------------------------------------------------
-echo "[+] Installing GNU Screen..."
-apt-get update -qq
-DEBIAN_FRONTEND=noninteractive apt-get install -y screen >/dev/null
+if command -v screen >/dev/null 2>&1; then
+    echo "[=] GNU Screen is already installed ($(screen --version | head -n1))"
+else
+    echo "[+] Installing GNU Screen..."
+    apt-get update -qq
+    DEBIAN_FRONTEND=noninteractive apt-get install -y screen >/dev/null
+    echo "[+] GNU Screen installed successfully ($(screen --version | head -n1))"
+fi
 
 # ---------------------------------------------------------------------------
 # 2. Create user-specific configuration
