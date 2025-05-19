@@ -38,98 +38,115 @@ RUN_MODULES=("${DEFAULT_MODULES[@]}")
 SKIP_MODULES=()
 INTERACTIVE=false
 
-show_help() {
-  cat <<EOF
-ubuntu‑dotfile‑plus bootstrap
-============================
-Provision a fresh Ubuntu system with dotfiles & modules.
-
-Usage: ./bootstrap.sh [options]
-
-Options:
-  --module <name>   Run only the specified module (can repeat).
-  --skip <name>     Skip the specified module   (can repeat).
-  --dry‑run         Print actions but don't execute.
-  --interactive     Interactive mode to select modules.
-  -h, --help        Show this help.
-EOF
+# Function to ensure dialog is installed
+ensure_dialog() {
+  if ! command -v dialog >/dev/null 2>&1; then
+    echo "[+] Installing dialog package..."
+    apt-get update -qq
+    DEBIAN_FRONTEND=noninteractive apt-get install -y dialog >/dev/null
+  fi
 }
 
-# Function to show available modules
-show_available_modules() {
-  echo "Available modules:"
-  echo "-----------------"
-  for module in "${!MODULE_DESCRIPTIONS[@]}"; do
-    echo "[ ] $module - ${MODULE_DESCRIPTIONS[$module]}"
-  done
-  echo
-}
-
-# Function for interactive module selection
+# Function for interactive module selection using dialog
 interactive_selection() {
-  echo "=== Available Modules ==="
-  echo
-  local i=1
-  declare -A module_index
-  for module in "${!MODULE_DESCRIPTIONS[@]}"; do
-    printf "%2d) %s - %s\n" $i "$module" "${MODULE_DESCRIPTIONS[$module]}"
-    module_index[$i]=$module
-    ((i++))
+  ensure_dialog
+
+  # Initialize arrays
+  declare -a modules
+  modules=(${!MODULE_DESCRIPTIONS[@]})
+  declare -A selected_modules
+
+  # Prepare dialog options
+  declare -a dialog_options=()
+  for module in "${modules[@]}"; do
+    dialog_options+=("$module")
+    dialog_options+=("${MODULE_DESCRIPTIONS[$module]}")
+    dialog_options+=("off")
   done
-  echo
-  
-  local selected=()
+
   while true; do
-    echo "Currently selected: ${selected[*]:-none}"
-    echo
-    echo "Commands:"
-    echo "  Enter number to toggle module"
-    echo "  'a' to select all"
-    echo "  'n' to select none"
-    echo "  'i' to install selected modules"
-    echo "  'q' to quit"
-    echo
-    read -p "Enter choice: " choice
+    # Create temporary file for dialog output
+    temp_file=$(mktemp)
+
+    # Show checklist dialog
+    dialog --clear \
+           --title "Ubuntu Dotfile Plus" \
+           --backtitle "Module Selection" \
+           --separate-output \
+           --checklist "Select modules to install (Space to select/deselect, Enter to confirm):" \
+           20 78 15 \
+           "${dialog_options[@]}" \
+           2>"$temp_file"
+
+    # Check dialog exit status
+    dialog_status=$?
     
-    case $choice in
-      [1-9]|[1-9][0-9])
-        if [[ -n "${module_index[$choice]}" ]]; then
-          module="${module_index[$choice]}"
-          if [[ " ${selected[*]} " =~ " ${module} " ]]; then
-            # Remove from selected
-            selected=(${selected[@]/$module/})
-          else
-            # Add to selected
-            selected+=("$module")
-          fi
-        else
-          echo "Invalid number. Please try again."
-        fi
-        ;;
-      [aA])
-        selected=(${!MODULE_DESCRIPTIONS[@]})
-        ;;
-      [nN])
-        selected=()
-        ;;
-      [iI])
-        if [ ${#selected[@]} -eq 0 ]; then
-          echo "No modules selected. Please select at least one module."
+    case $dialog_status in
+      0) # User pressed OK
+        # Read selected modules
+        RUN_MODULES=()
+        while IFS= read -r module; do
+          RUN_MODULES+=("$module")
+        done < "$temp_file"
+
+        # Check if any modules were selected
+        if [ ${#RUN_MODULES[@]} -eq 0 ]; then
+          dialog --clear \
+                 --title "Error" \
+                 --msgbox "Please select at least one module." \
+                 8 40
           continue
         fi
-        RUN_MODULES=("${selected[@]}")
-        return 0
+
+        # Show confirmation with selected modules
+        selected_list=""
+        for module in "${RUN_MODULES[@]}"; do
+          selected_list+="• $module - ${MODULE_DESCRIPTIONS[$module]}\n"
+        done
+
+        dialog --clear \
+               --title "Confirmation" \
+               --yesno "Selected modules:\n\n$selected_list\nProceed with installation?" \
+               15 70
+
+        if [ $? -eq 0 ]; then
+          clear
+          return 0
+        else
+          continue
+        fi
         ;;
-      [qQ])
+      1) # User pressed Cancel
+        clear
         echo "Installation cancelled."
         exit 0
         ;;
-      *)
-        echo "Invalid option. Please try again."
+      255) # User pressed ESC
+        clear
+        echo "Installation cancelled."
+        exit 0
         ;;
     esac
-    echo
+
+    rm -f "$temp_file"
   done
+}
+
+# Function to display help
+show_help() {
+  dialog --clear \
+         --title "Help" \
+         --msgbox "Ubuntu Dotfile Plus Bootstrap\n\n\
+Usage:\n\
+  ./bootstrap.sh                 # interactive mode\n\
+  ./bootstrap.sh --module name   # install specific module\n\
+  ./bootstrap.sh --skip name     # skip specific module\n\
+  ./bootstrap.sh -h|--help      # show this help\n\n\
+Available Modules:\n\
+$(printf "• %s - %s\n" "${!MODULE_DESCRIPTIONS[@]}" "${MODULE_DESCRIPTIONS[@]}")" \
+         20 78
+  clear
+  exit 0
 }
 
 DRY_RUN=false
@@ -156,33 +173,46 @@ while [[ $# -gt 0 ]]; do
       ;;
     -h|--help)
       show_help
-      exit 0
       ;;
     *)
       echo "Unknown option: $1" >&2
       show_help
-      exit 1
       ;;
   esac
 done
 
-# Handle interactive mode
-if $INTERACTIVE || [ $# -eq 0 ]; then
-  interactive_selection
-fi
+# Main script
+main() {
+  # Set default values and handle parameters safely
+  local args=("$@")
+  
+  if [ ${#args[@]} -gt 0 ] && [[ "${args[0]}" == "-h" || "${args[0]}" == "--help" ]]; then
+    show_help
+  fi
 
-# Remove duplicates & apply skips
-unique() { awk '!x[$0]++'; }
-RUN_MODULES=( $(printf "%s\n" "${RUN_MODULES[@]}" | unique) )
+  if $INTERACTIVE || [ ${#args[@]} -eq 0 ]; then
+    interactive_selection
+  fi
 
-if [[ ${#SKIP_MODULES[@]} -gt 0 ]]; then
-  RUN_MODULES=( $(printf "%s\n" "${RUN_MODULES[@]}" | grep -vxF -e "${SKIP_MODULES[@]}" || true) )
-fi
+  # Remove duplicates & apply skips
+  unique() { awk '!x[$0]++'; }
+  RUN_MODULES=( $(printf "%s\n" "${RUN_MODULES[@]}" | unique) )
 
-echo "[i] Modules to run: ${RUN_MODULES[*]}"
-$DRY_RUN && echo "[i] DRY‑RUN – no changes will be made."
+  if [[ ${#SKIP_MODULES[@]} -gt 0 ]]; then
+    RUN_MODULES=( $(printf "%s\n" "${RUN_MODULES[@]}" | grep -vxF -e "${SKIP_MODULES[@]}" || true) )
+  fi
 
-die() { echo "[✗] $*" >&2; exit 1; }
+  echo "[i] Modules to run: ${RUN_MODULES[*]}"
+  $DRY_RUN && echo "[i] DRY-RUN – no changes will be made."
+
+  link_dotfiles
+
+  for mod in "${RUN_MODULES[@]}"; do
+    run_module "$mod"
+  done
+
+  echo "[✓] bootstrap complete. Log out/in or reboot if necessary."
+}
 
 # -----------------------------------------------------------------------------
 # 1. Dotfiles symlink
@@ -228,16 +258,6 @@ run_module() {
   else
     sudo -E bash "$script_path"
   fi
-}
-
-main() {
-  link_dotfiles
-
-  for mod in "${RUN_MODULES[@]}"; do
-    run_module "$mod"
-  done
-
-  echo "[✓] bootstrap complete. Log out/in or reboot if necessary."
 }
 
 main "$@"
