@@ -14,47 +14,7 @@ apt-get update -qq
 DEBIAN_FRONTEND=noninteractive apt-get install -y screen >/dev/null
 
 # ---------------------------------------------------------------------------
-# 2. Create default screen configuration
-# ---------------------------------------------------------------------------
-SCREENRC="/etc/screenrc"
-if [[ ! -f "${SCREENRC}.orig" ]]; then
-    echo "[+] Backing up original screenrc"
-    cp "${SCREENRC}" "${SCREENRC}.orig"
-fi
-
-echo "[+] Creating new screen configuration..."
-cat > "${SCREENRC}" <<EOF
-# Screen configuration file
-
-# Disable the startup message
-startup_message off
-
-# Set a large scrollback buffer
-defscrollback 10000
-
-# Display a status line at the bottom
-hardstatus alwayslastline
-hardstatus string '%{= kG}[ %{G}%H %{g}][%= %{= kw}%?%-Lw%?%{r}(%{W}%n*%f%t%?(%u)%?%{r})%{w}%?%+Lw%?%?%= %{g}][%{B} %m-%d %{W}%c %{g}]'
-
-# Enable mouse scrolling and scroll bar
-termcapinfo xterm* ti@:te@
-
-# Default windows
-screen -t Shell  0 bash
-screen -t Shell2 1 bash
-
-# Switch to window 0
-select 0
-
-# Set default shell
-shell -$SHELL
-EOF
-
-echo "[+] Setting permissions..."
-chmod 644 "${SCREENRC}"
-
-# ---------------------------------------------------------------------------
-# 3. Create user-specific configuration
+# 2. Create user-specific configuration
 # ---------------------------------------------------------------------------
 if [[ -n "${SUDO_USER:-}" && "${SUDO_USER}" != "root" ]]; then
     USER_NAME="${SUDO_USER}"
