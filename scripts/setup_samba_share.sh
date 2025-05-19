@@ -55,8 +55,44 @@ chown -R "${USER_NAME}:${USER_NAME}" "${HOME_DIR}"
 # ---------------------------------------------------------------------------
 # 4. 공유 설정 추가(중복 방지)
 # ---------------------------------------------------------------------------
-if ! grep -q "^\[${SHARE_NAME}\]" "${SMB_CONF}"; then
-cat >> "${SMB_CONF}" <<EOF
+if grep -q "^\[${SHARE_NAME}\]" "${SMB_CONF}"; then
+    echo "[!] 기존 Samba 공유 설정이 발견되었습니다: [${SHARE_NAME}]"
+    echo "현재 설정:"
+    echo "----------------------------------------"
+    sed -n "/^\[${SHARE_NAME}\]/,/^$/p" "${SMB_CONF}"
+    echo "----------------------------------------"
+    
+    while true; do
+        read -p "기존 설정을 덮어쓰시겠습니까? (y/n): " yn
+        case $yn in
+            [Yy]* )
+                # 기존 설정 제거
+                echo "[+] 기존 설정을 제거합니다..."
+                sed -i "/^\[${SHARE_NAME}\]/,/^$/d" "${SMB_CONF}"
+                
+                # 새 설정 추가
+                echo "[+] 새로운 설정을 추가합니다..."
+                cat >> "${SMB_CONF}" <<EOF
+
+[${SHARE_NAME}]
+   path = ${HOME_DIR}
+   browseable = yes
+   writable  = yes
+   read only = no
+   valid users = ${USER_NAME}
+   create mask = 0660
+   directory mask = 0771
+EOF
+                break;;
+            [Nn]* )
+                echo "[=] 기존 설정을 유지합니다."
+                break;;
+            * ) echo "y 또는 n으로 답해주세요.";;
+        esac
+    done
+else
+    echo "[+] 새로운 Samba 공유 설정을 추가합니다..."
+    cat >> "${SMB_CONF}" <<EOF
 
 [${SHARE_NAME}]
    path = ${HOME_DIR}
@@ -68,8 +104,6 @@ cat >> "${SMB_CONF}" <<EOF
    directory mask = 0771
 EOF
     echo "[+] Added share [${SHARE_NAME}] to smb.conf"
-else
-    echo "[=] Share [${SHARE_NAME}] already exists — skipping"
 fi
 
 # ---------------------------------------------------------------------------
