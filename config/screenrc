@@ -3,6 +3,16 @@
 # ================================
 
 # ───────────────────────────────
+# 📺 Terminal size handling
+termcapinfo xterm* 'is=\E[r\E[m\E[2J\E[H\E[?7h\E[?1;4;6l'
+termcapinfo xterm* 'Co#256:AB=\E[48;5;%dm:AF=\E[38;5;%dm'
+termcapinfo xterm* ti@:te@
+
+# Automatically adapt to window size changes
+termcapinfo xterm* 'hs:ts=\E]0;:fs=\007:ds=\E]0;\007'
+defflow auto
+
+# ───────────────────────────────
 # 🖱️ Use native terminal scroll (disable alternate screen buffer)
 termcapinfo xterm* ti@:te@
 
@@ -23,10 +33,14 @@ vbell off
 shelltitle "$ | bash"
 
 # ───────────────────────────────
+# 🕒 Dynamic time update (every 1 second)
+backtick 1 1 1 date '+%Y-%m-%d %H:%M:%S'
+
+# ───────────────────────────────
 # 🧭 Dynamic status line (bottom)
 hardstatus on
 hardstatus alwayslastline
-hardstatus string "%{= kB}%H %{= kw}[%= %{= kR}%l%{= kw} | %{= kC}%Y-%m-%d %c %=%{= kW}%n %t%{-}]"
+hardstatus string "%{= kB}%H %{= kw}[%= %{= kR}%l%{= kw} | %{= kC}%1`%{= kw} %=%{= kW}%n %t%{-}]"
 
 # ───────────────────────────────
 # ⌨️ Key Bindings – Vim-style navigation for copy mode
