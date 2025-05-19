@@ -1,0 +1,59 @@
+# ================================
+# [💻 SCREEN - NERD MODE CONFIG]
+# ================================
+
+# ───────────────────────────────
+# 🖱️ Use native terminal scroll (disable alternate screen buffer)
+termcapinfo xterm* ti@:te@
+
+# ───────────────────────────────
+# 🧠 Scrollback history size
+defscrollback 32767  # max buffer
+
+# ───────────────────────────────
+# ⛔ Disable annoying startup message
+startup_message off
+
+# ───────────────────────────────
+# 🔕 Silence the visual bell
+vbell off
+
+# ───────────────────────────────
+# 🪪 Show shell title (for nested shell clarity)
+shelltitle "$ | bash"
+
+# ───────────────────────────────
+# 🧭 Dynamic status line (bottom)
+hardstatus on
+hardstatus alwayslastline
+hardstatus string "%{= kB}%H %{= kw}[%= %{= kR}%l%{= kw} | %{= kC}%Y-%m-%d %c %=%{= kW}%n %t%{-}]"
+
+# ───────────────────────────────
+# ⌨️ Key Bindings – Vim-style navigation for copy mode
+# (Use ^A-Esc to enter, then vi keys)
+bindkey -m ^[[A stuff "k"  # Up
+bindkey -m ^[[B stuff "j"  # Down
+bindkey -m ^[[C stuff "l"  # Right
+bindkey -m ^[[D stuff "h"  # Left
+
+# ───────────────────────────────
+# 🧬 UTF-8 support for modern systems
+defutf8 on
+
+# ───────────────────────────────
+# 🔌 Session customization (optional default name)
+# sessionname devhub
+
+# ───────────────────────────────
+# 🎛 Custom key bindings
+# Detach using F12
+bindkey -k F2 detach
+
+# Quick screen info
+bind i info
+
+# Reload .screenrc on the fly
+bind r source ~/.screenrc
+
+# Open new window with shell
+bind c screen bash
