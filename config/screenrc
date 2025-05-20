@@ -37,12 +37,7 @@ shelltitle "$ | bash"
 backtick 1 1 1 date '+%Y-%m-%d %H:%M:%S'
 backtick 2 1 1 sh -c 'cut -d " " -f1-3 /proc/loadavg'
 backtick 3 1 1 sh -c 'IFACE=$(ip route get 8.8.8.8 | grep -oP "dev \K\w+"); \
-    RX1=$(cat /sys/class/net/$IFACE/statistics/rx_bytes); \
-    TX1=$(cat /sys/class/net/$IFACE/statistics/tx_bytes); \
-    sleep 1; \
-    RX2=$(cat /sys/class/net/$IFACE/statistics/rx_bytes); \
-    TX2=$(cat /sys/class/net/$IFACE/statistics/tx_bytes); \
-    printf "↓%5.1fM ↑%5.1fM" $(((RX2-RX1)/1048576)) $(((TX2-TX1)/1048576))'
+    ~/bin/netrate_fast.sh $IFACE'
 
 # ───────────────────────────────
 # 🧭 Dynamic status line (bottom)
