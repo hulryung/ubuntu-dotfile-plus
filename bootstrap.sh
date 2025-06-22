@@ -37,7 +37,7 @@ declare -A MODULE_REQUIRES_SUDO=(
   ["setup_kubernetes"]="true"
   ["setup_development"]="true"
   ["setup_system"]="true"
-  ["setup_screen"]="true"
+  ["setup_screen"]="false"
 )
 
 DEFAULT_MODULES=(
@@ -250,6 +250,13 @@ main() {
 # -----------------------------------------------------------------------------
 link_dotfiles() {
   echo "[+] Linking dotfiles …"
+  
+  # Check if dotfiles directory exists
+  if [[ ! -d "${DOTFILES_DIR}" ]]; then
+    echo "    [i] Dotfiles directory not found at ${DOTFILES_DIR} – skipping"
+    return
+  fi
+  
   shopt -s dotglob
   for src in "${DOTFILES_DIR}"/*; do
     fname="$(basename "$src")"

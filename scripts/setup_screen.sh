@@ -34,9 +34,17 @@ fi
 # ---------------------------------------------------------------------------
 # 2. Create user-specific configuration
 # ---------------------------------------------------------------------------
-USER_NAME="$(whoami)"
-USER_SCREENRC="/home/${USER_NAME}/.screenrc"
+# Get the actual user name and home directory (not root when running with sudo)
+if [[ -n "${SUDO_USER:-}" ]]; then
+    USER_NAME="${SUDO_USER}"
+else
+    USER_NAME="$(whoami)"
+fi
+USER_HOME="$(eval echo ~${USER_NAME})"
+USER_SCREENRC="${USER_HOME}/.screenrc"
 BACKUP_SUFFIX="$(date +%Y%m%d_%H%M%S).orig"
+
+echo "[i] Installing configuration for user: ${USER_NAME}"
 
 # Check if config file exists in repository
 if [[ ! -f "${CONFIG_SCREENRC}" ]]; then
