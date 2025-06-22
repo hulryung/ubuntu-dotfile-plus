@@ -71,10 +71,19 @@ get_exit_status() {
 get_current_dir() {
     local pwd_length=${#PWD}
     local max_length=50
-    if [[ $pwd_length -gt $max_length ]]; then
-        echo -n "...${PWD: -$((max_length-3))}"
+    local current_path="$PWD"
+    
+    # 홈 디렉토리를 ~로 표시
+    if [[ "$current_path" == "$HOME" ]]; then
+        current_path="~"
+    elif [[ "$current_path" == "$HOME"/* ]]; then
+        current_path="~${current_path#$HOME}"
+    fi
+    
+    if [[ ${#current_path} -gt $max_length ]]; then
+        echo -n "...${current_path: -$((max_length-3))}"
     else
-        echo -n "$PWD"
+        echo -n "$current_path"
     fi
 }
 
