@@ -7,6 +7,7 @@
 ## ✨ Key Features
 
 * **One‑command provisioning** – install packages, apply system tweaks, and symlink personalized config files with a single script.
+* **User-friendly execution** – can be run as a regular user; sudo privileges are requested only when needed.
 * **Curated dotfiles** – `bash`/`zsh`, `git`, `vim`/`neovim`, `tmux`, `ssh`, and more, all version‑controlled.
 * **Modular scripts** – independent install modules (e.g. `docker`, `samba`, `devtools`) that you can turn on/off.
 * **Idempotent by design** – safe to re‑run; existing settings are detected before modification.
@@ -94,9 +95,9 @@ source ~/.bashrc
 ### How to Run
 
 ```bash
-# Clone the repo and run the script with sudo
+# Clone the repo and run the script (sudo will be requested if needed)
 cd ubuntu-dotfile-plus/scripts
-sudo bash setup_samba_share.sh
+bash setup_samba_share.sh
 ```
 
 After the script finishes, access the share from Windows:
@@ -117,7 +118,7 @@ After the script finishes, access the share from Windows:
 git clone https://github.com/<your‑user>/ubuntu-dotfile-plus.git
 cd ubuntu-dotfile-plus
 
-# 2. Provision the system (will prompt for sudo)
+# 2. Provision the system (sudo will be requested when needed)
 ./bootstrap.sh
 ```
 

@@ -2,21 +2,23 @@
 # setup_samba_share.sh
 #
 # Purpose : Share current user's home directory with read/write access
-# Usage   : sudo bash setup_samba_share.sh
+# Usage   : bash setup_samba_share.sh (sudo will be requested if needed)
 # Note    : Samba password needs to be entered in the final step
 
 set -euo pipefail
 
+# Function to check if sudo is available and working
+check_sudo() {
+  if ! command -v sudo >/dev/null 2>&1; then
+    echo "[!] sudo is not available. Please install sudo or run as root."
+    exit 1
+  fi
+}
+
 # ---------------------------------------------------------------------------
 # 0. Identify current user
-#    - $SUDO_USER if running with sudo, otherwise $(whoami)
 # ---------------------------------------------------------------------------
-if [[ -n "${SUDO_USER:-}" && "${SUDO_USER}" != "root" ]]; then
-    USER_NAME="${SUDO_USER}"
-else
-    USER_NAME="$(whoami)"
-fi
-
+USER_NAME="$(whoami)"
 HOME_DIR="$(eval echo ~"${USER_NAME}")"
 SHARE_NAME="${USER_NAME}"
 SMB_CONF="/etc/samba/smb.conf"
@@ -35,31 +37,32 @@ echo
 # 1. Install Samba package
 # ---------------------------------------------------------------------------
 echo "[+] Installing Samba..."
-apt-get update -qq
-DEBIAN_FRONTEND=noninteractive apt-get install -y samba >/dev/null
+check_sudo
+sudo apt-get update -qq
+DEBIAN_FRONTEND=noninteractive sudo apt-get install -y samba >/dev/null
 
 # ---------------------------------------------------------------------------
 # 2. Backup smb.conf
 # ---------------------------------------------------------------------------
 if [[ ! -f "${SMB_CONF}.${BACKUP_SUFFIX}" ]]; then
     echo "[+] Backing up ${SMB_CONF} → ${SMB_CONF}.${BACKUP_SUFFIX}"
-    cp "${SMB_CONF}" "${SMB_CONF}.${BACKUP_SUFFIX}"
+    sudo cp "${SMB_CONF}" "${SMB_CONF}.${BACKUP_SUFFIX}"
 fi
 
 # ---------------------------------------------------------------------------
 # 3. Verify home directory ownership
 # ---------------------------------------------------------------------------
 echo "[+] Ensuring correct ownership of ${HOME_DIR}"
-chown -R "${USER_NAME}:${USER_NAME}" "${HOME_DIR}"
+sudo chown -R "${USER_NAME}:${USER_NAME}" "${HOME_DIR}"
 
 # ---------------------------------------------------------------------------
 # 4. Add share configuration (prevent duplicates)
 # ---------------------------------------------------------------------------
-if grep -q "^\[${SHARE_NAME}\]" "${SMB_CONF}"; then
+if sudo grep -q "^\[${SHARE_NAME}\]" "${SMB_CONF}"; then
     echo "[!] Existing Samba share configuration found: [${SHARE_NAME}]"
     echo "Current configuration:"
     echo "----------------------------------------"
-    sed -n "/^\[${SHARE_NAME}\]/,/^$/p" "${SMB_CONF}"
+    sudo sed -n "/^\[${SHARE_NAME}\]/,/^$/p" "${SMB_CONF}"
     echo "----------------------------------------"
     
     while true; do
@@ -68,11 +71,11 @@ if grep -q "^\[${SHARE_NAME}\]" "${SMB_CONF}"; then
             [Yy]* )
                 # Remove existing configuration
                 echo "[+] Removing existing configuration..."
-                sed -i "/^\[${SHARE_NAME}\]/,/^$/d" "${SMB_CONF}"
+                sudo sed -i "/^\[${SHARE_NAME}\]/,/^$/d" "${SMB_CONF}"
                 
                 # Add new configuration
                 echo "[+] Adding new configuration..."
-                cat >> "${SMB_CONF}" <<EOF
+                sudo tee -a "${SMB_CONF}" > /dev/null <<EOF
 
 [${SHARE_NAME}]
    path = ${HOME_DIR}
@@ -92,7 +95,7 @@ EOF
     done
 else
     echo "[+] Adding new Samba share configuration..."
-    cat >> "${SMB_CONF}" <<EOF
+    sudo tee -a "${SMB_CONF}" > /dev/null <<EOF
 
 [${SHARE_NAME}]
    path = ${HOME_DIR}
@@ -110,13 +113,13 @@ fi
 # 5. Add/Update Samba user
 # ---------------------------------------------------------------------------
 echo "[+] Setting Samba password for ${USER_NAME}"
-(echo; smbpasswd -a "${USER_NAME}") || true
+(echo; sudo smbpasswd -a "${USER_NAME}") || true
 
 # ---------------------------------------------------------------------------
 # 6. Restart services
 # ---------------------------------------------------------------------------
 echo "[+] Restarting Samba services"
-systemctl restart smbd nmbd
+sudo systemctl restart smbd nmbd
 
 echo
 echo "[✓] Complete!"

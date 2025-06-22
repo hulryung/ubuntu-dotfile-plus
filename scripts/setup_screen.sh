@@ -2,13 +2,21 @@
 # setup_screen.sh
 #
 # Purpose : Install and configure GNU Screen with basic settings
-# Usage   : sudo bash setup_screen.sh
+# Usage   : bash setup_screen.sh (sudo will be requested if needed)
 
 set -euo pipefail
 
 # Get repository root directory
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)"
 CONFIG_SCREENRC="${REPO_ROOT}/config/screenrc"
+
+# Function to check if sudo is available and working
+check_sudo() {
+  if ! command -v sudo >/dev/null 2>&1; then
+    echo "[!] sudo is not available. Please install sudo or run as root."
+    exit 1
+  fi
+}
 
 # ---------------------------------------------------------------------------
 # 1. Check and Install screen package if needed
@@ -17,20 +25,16 @@ if command -v screen >/dev/null 2>&1; then
     echo "[=] GNU Screen is already installed ($(screen --version | head -n1))"
 else
     echo "[+] Installing GNU Screen..."
-    apt-get update -qq
-    DEBIAN_FRONTEND=noninteractive apt-get install -y screen >/dev/null
+    check_sudo
+    sudo apt-get update -qq
+    DEBIAN_FRONTEND=noninteractive sudo apt-get install -y screen >/dev/null
     echo "[+] GNU Screen installed successfully ($(screen --version | head -n1))"
 fi
 
 # ---------------------------------------------------------------------------
 # 2. Create user-specific configuration
 # ---------------------------------------------------------------------------
-if [[ -n "${SUDO_USER:-}" && "${SUDO_USER}" != "root" ]]; then
-    USER_NAME="${SUDO_USER}"
-else
-    USER_NAME="$(whoami)"
-fi
-
+USER_NAME="$(whoami)"
 USER_SCREENRC="/home/${USER_NAME}/.screenrc"
 BACKUP_SUFFIX="$(date +%Y%m%d_%H%M%S).orig"
 
@@ -49,7 +53,6 @@ fi
 # Copy repository configuration
 echo "[+] Installing screen configuration from ${CONFIG_SCREENRC}"
 cp "${CONFIG_SCREENRC}" "${USER_SCREENRC}"
-chown "${USER_NAME}:${USER_NAME}" "${USER_SCREENRC}"
 chmod 644 "${USER_SCREENRC}"
 
 echo

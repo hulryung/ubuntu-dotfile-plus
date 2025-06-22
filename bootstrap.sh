@@ -11,6 +11,7 @@
 #   • Must be executed from the repository root.
 #   • Designed for Ubuntu 22.04 LTS+ (Debian‑based distros should work).
 #   • Safe to re‑run (idempotent where practical).
+#   • Can be run as regular user - sudo will be requested when needed.
 
 set -euo pipefail
 IFS=$'\n\t'
@@ -29,6 +30,16 @@ declare -A MODULE_DESCRIPTIONS=(
   ["setup_screen"]="Install and configure GNU Screen"
 )
 
+# Modules that require sudo privileges
+declare -A MODULE_REQUIRES_SUDO=(
+  ["setup_samba_share"]="true"
+  ["setup_docker"]="true"
+  ["setup_kubernetes"]="true"
+  ["setup_development"]="true"
+  ["setup_system"]="true"
+  ["setup_screen"]="true"
+)
+
 DEFAULT_MODULES=(
   "setup_samba_share"
   "setup_screen"
@@ -38,12 +49,29 @@ RUN_MODULES=("${DEFAULT_MODULES[@]}")
 SKIP_MODULES=()
 INTERACTIVE=false
 
+# Function to check if sudo is available and working
+check_sudo() {
+  if ! command -v sudo >/dev/null 2>&1; then
+    echo "[!] sudo is not available. Please install sudo or run as root."
+    exit 1
+  fi
+  
+  if ! sudo -n true 2>/dev/null; then
+    echo "[i] sudo privileges will be requested when needed."
+  fi
+}
+
 # Function to ensure dialog is installed
 ensure_dialog() {
   if ! command -v dialog >/dev/null 2>&1; then
     echo "[+] Installing dialog package..."
-    apt-get update -qq
-    DEBIAN_FRONTEND=noninteractive apt-get install -y dialog >/dev/null
+    if [[ "${MODULE_REQUIRES_SUDO["setup_system"]:-false}" == "true" ]]; then
+      sudo apt-get update -qq
+      DEBIAN_FRONTEND=noninteractive sudo apt-get install -y dialog >/dev/null
+    else
+      echo "[!] dialog is required but not available. Please install it manually or run with sudo."
+      exit 1
+    fi
   fi
 }
 
@@ -186,6 +214,9 @@ main() {
   # Set default values and handle parameters safely
   local args=("$@")
   
+  # Check sudo availability early
+  check_sudo
+  
   if [ ${#args[@]} -gt 0 ] && [[ "${args[0]}" == "-h" || "${args[0]}" == "--help" ]]; then
     show_help
   fi
@@ -253,10 +284,21 @@ run_module() {
   fi
 
   echo "[+] Running module: $name"
-  if $DRY_RUN; then
-    echo "    (dry‑run) bash $script_path"
+  
+  # Check if this module requires sudo privileges
+  if [[ "${MODULE_REQUIRES_SUDO[$name]:-false}" == "true" ]]; then
+    echo "    [i] This module requires sudo privileges"
+    if $DRY_RUN; then
+      echo "    (dry‑run) sudo -E bash $script_path"
+    else
+      sudo -E bash "$script_path"
+    fi
   else
-    sudo -E bash "$script_path"
+    if $DRY_RUN; then
+      echo "    (dry‑run) bash $script_path"
+    else
+      bash "$script_path"
+    fi
   fi
 }
 
