@@ -28,6 +28,7 @@ declare -A MODULE_DESCRIPTIONS=(
   ["setup_development"]="Install development tools and IDEs"
   ["setup_system"]="Configure system settings and optimizations"
   ["setup_screen"]="Install and configure GNU Screen"
+  ["install_awesome_prompt"]="Install awesome bash prompt with Python env, Git status, and system info"
 )
 
 # Modules that require sudo privileges
@@ -38,11 +39,13 @@ declare -A MODULE_REQUIRES_SUDO=(
   ["setup_development"]="true"
   ["setup_system"]="true"
   ["setup_screen"]="false"
+  ["install_awesome_prompt"]="false"
 )
 
 DEFAULT_MODULES=(
   "setup_samba_share"
   "setup_screen"
+  "install_awesome_prompt"
 )
 
 RUN_MODULES=("${DEFAULT_MODULES[@]}")

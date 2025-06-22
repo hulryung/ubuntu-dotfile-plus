@@ -86,15 +86,15 @@ set_awesome_prompt() {
         local user_color="$GREEN"
     fi
     PS1=""
+    PS1+="${PURPLE}\$(get_python_env)${RESET} "
+    PS1+="${CYAN}\$(get_current_dir)${RESET}"
+    PS1+="\$(git branch 2>/dev/null | grep -q '*' && (git status --porcelain 2>/dev/null | grep -q . && echo '${YELLOW}' || echo '${BLUE}'))"
     PS1+="${GREEN}\$(get_exit_status)${RESET} "
     PS1+="${GRAY}\$(get_time)\$(get_system_info)${RESET} "
-    PS1+="${PURPLE}\$(get_python_env)${RESET} "
     # Git 상태에 따라 색상 분기
-    PS1+="\$(git branch 2>/dev/null | grep -q '*' && (git status --porcelain 2>/dev/null | grep -q . && echo '${YELLOW}' || echo '${BLUE}'))"
     PS1+="\$(get_git_info)${RESET} "
     PS1+="${user_color}\u@\h${RESET}:"
-    PS1+="${CYAN}\$(get_current_dir)${RESET}"
-    PS1+="\n${YELLOW}➤${RESET} "
+    PS1+="\n${YELLOW}\$${RESET} "
 }
 
 set_awesome_prompt
