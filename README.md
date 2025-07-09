@@ -37,12 +37,32 @@ ubuntu-dotfile-plus/
 
 ---
 
-## 🚀 Awesome Bash Prompt
+## 🚀 Installation
+
+### Quick Start (Full Bootstrap)
+
+For a complete setup with all features:
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/hulryung/ubuntu-dotfile-plus.git
+cd ubuntu-dotfile-plus
+
+# 2. Run the bootstrap script (sudo will be requested when needed)
+./bootstrap.sh
+```
+
+Log out/in (or reboot) once the script completes to load your new shell environment.
+
+### Individual Component Installation
+
+If you prefer to install specific components only:
+
+#### Awesome Bash Prompt
 
 The **Awesome Prompt** is a feature-rich bash prompt that provides comprehensive information at a glance:
 
-### Features
-
+**Features:**
 * **🐍 Python Environment Detection** – Shows active virtual environment or conda environment
 * **Git Integration** – Displays current branch and status indicators
   * Green ● = Clean repository
@@ -54,37 +74,32 @@ The **Awesome Prompt** is a feature-rich bash prompt that provides comprehensive
 * **Color Coding** – Different colors for different types of information
 * **User/Host Info** – Shows username@hostname with root user highlighted in red
 
-### Installation
-
+**Installation:**
 ```bash
-# Install the awesome prompt
+# Clone the repo first
+git clone https://github.com/hulryung/ubuntu-dotfile-plus.git
 cd ubuntu-dotfile-plus/scripts
 ./install_awesome_prompt.sh
 ```
 
-### Manual Installation
-
+**Manual Installation:**
 ```bash
 # Add to your .bashrc
 echo "source $(pwd)/config/awesome_prompt.sh" >> ~/.bashrc
 source ~/.bashrc
 ```
 
-### Example Output
-
+**Example Output:**
 ```
 ✓ 14:30:25 [L:0.5 M:45.2% D:67%] 🐍(myenv) git:(main)● user@host:/home/user/project
 ➤ 
 ```
 
----
-
-## Included Script Spotlight: `setup_samba_share.sh`
+#### Samba Share Setup
 
 `setup_samba_share.sh` shares the *current* user's home directory (`/home/<user>`) over Samba with **read/write** access so that a Windows PC can access it immediately after Ubuntu installation.
 
-### What It Does
-
+**What It Does:**
 1. Installs the `samba` package (if missing).
 2. Backs up `/etc/samba/smb.conf` with a timestamp.
 3. Ensures correct ownership of the user's home directory.
@@ -92,10 +107,10 @@ source ~/.bashrc
 5. Prompts you to set a Samba password for the user.
 6. Restarts the `smbd` and `nmbd` services.
 
-### How to Run
-
+**Installation:**
 ```bash
-# Clone the repo and run the script (sudo will be requested if needed)
+# Clone the repo first
+git clone https://github.com/hulryung/ubuntu-dotfile-plus.git
 cd ubuntu-dotfile-plus/scripts
 bash setup_samba_share.sh
 ```
@@ -108,21 +123,6 @@ After the script finishes, access the share from Windows:
 > ```bash
 > sudo ufw allow samba
 > ```
-
----
-
-## Quick Start (Full Bootstrap)
-
-```bash
-# 1. Grab the repo
-git clone https://github.com/<your‑user>/ubuntu-dotfile-plus.git
-cd ubuntu-dotfile-plus
-
-# 2. Provision the system (sudo will be requested when needed)
-./bootstrap.sh
-```
-
-Log out/in (or reboot) once the script completes to load your new shell environment.
 
 ---
 
