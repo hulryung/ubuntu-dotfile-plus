@@ -18,7 +18,14 @@ check_sudo() {
 # ---------------------------------------------------------------------------
 # 0. Identify current user
 # ---------------------------------------------------------------------------
-USER_NAME="$(whoami)"
+# Get the actual user who invoked sudo, not root
+if [[ -n "${SUDO_USER:-}" ]]; then
+    USER_NAME="${SUDO_USER}"
+elif [[ -n "${USER:-}" ]] && [[ "${USER}" != "root" ]]; then
+    USER_NAME="${USER}"
+else
+    USER_NAME="$(whoami)"
+fi
 HOME_DIR="$(eval echo ~"${USER_NAME}")"
 SHARE_NAME="${USER_NAME}"
 SMB_CONF="/etc/samba/smb.conf"
