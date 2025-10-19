@@ -28,7 +28,7 @@ declare -A MODULE_DESCRIPTIONS=(
   ["setup_development"]="Install development tools and IDEs"
   ["setup_system"]="Configure system settings and optimizations"
   ["setup_screen"]="Install and configure GNU Screen"
-  ["install_awesome_prompt"]="Install awesome bash prompt with Python env, Git status, and system info"
+  ["install_starship"]="Install Starship prompt with Gruvbox theme and Git/env detection"
 )
 
 # Modules that require sudo privileges
@@ -39,13 +39,13 @@ declare -A MODULE_REQUIRES_SUDO=(
   ["setup_development"]="true"
   ["setup_system"]="true"
   ["setup_screen"]="false"
-  ["install_awesome_prompt"]="false"
+  ["install_starship"]="false"
 )
 
 DEFAULT_MODULES=(
   "setup_samba_share"
   "setup_screen"
-  "install_awesome_prompt"
+  "install_starship"
 )
 
 RUN_MODULES=("${DEFAULT_MODULES[@]}")

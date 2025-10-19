@@ -13,7 +13,7 @@
 * **Idempotent by design** – safe to re‑run; existing settings are detected before modification.
 * **Ubuntu‑focused** – tuned for the latest LTS release, but compatible with most Debian‑based distros.
 * **Rollback safety** – critical files are automatically backed up before changes are applied.
-* **Awesome Bash Prompt** – feature-rich terminal prompt with Python env, Git status, system info, and more.
+* **Starship Prompt** – modern cross-shell prompt with Gruvbox theme, Git status, language detection, and more.
 
 ---
 
@@ -23,16 +23,13 @@
 ubuntu-dotfile-plus/
 ├── bootstrap.sh        # Master launcher: orchestrates all steps
 ├── config/             # Configuration files
-│   ├── awesome_prompt.sh  # Feature-rich bash prompt
+│   ├── starship.toml      # Starship prompt configuration
 │   ├── netrate_fast.sh    # Network configuration
 │   └── screenrc           # Screen configuration
 ├── scripts/            # Self‑contained provisioning modules
-│   ├── install_awesome_prompt.sh  # Awesome prompt installer
-│   ├── setup_samba_share.sh       # Samba share setup
-│   └── setup_screen.sh            # Screen setup
-├── dotfiles/           # Actual dotfiles (bashrc, gitconfig…)
-├── ansible/            # Optional playbook for remote or headless setups
-└── docs/               # Usage notes, troubleshooting, FAQs
+│   ├── install_starship.sh    # Starship prompt installer
+│   ├── setup_samba_share.sh   # Samba share setup
+│   └── setup_screen.sh        # Screen setup
 ```
 
 ---
@@ -58,41 +55,42 @@ Log out/in (or reboot) once the script completes to load your new shell environm
 
 If you prefer to install specific components only:
 
-#### Awesome Bash Prompt
+#### Starship Prompt
 
-The **Awesome Prompt** is a feature-rich bash prompt that provides comprehensive information at a glance:
+The **Starship Prompt** is a modern, blazing-fast cross-shell prompt with a custom Gruvbox Dark theme:
 
 **Features:**
-* **🐍 Python Environment Detection** – Shows active virtual environment or conda environment
-* **Git Integration** – Displays current branch and status indicators
-  * Green ● = Clean repository
-  * Yellow ● = Uncommitted changes
-* **System Information** – Real-time load average, memory usage, and disk usage
-* **Time Display** – Current time in HH:MM:SS format
-* **Exit Status** – Visual indicator for command success (✓) or failure (✗)
-* **Smart Path Truncation** – Long paths are intelligently shortened
-* **Color Coding** – Different colors for different types of information
-* **User/Host Info** – Shows username@hostname with root user highlighted in red
+* **OS Icon** – Displays your operating system with a beautiful icon
+* **User/Host Info** – Shows username@hostname with root user highlighted differently
+* **Current Directory** – Smart path truncation with icon substitutions
+* **Git Integration** – Branch name and status with color-coded indicators
+* **Language Detection** – Automatic detection and version display for:
+  * Python, Node.js, Rust, Go, Java, C/C++, PHP, Kotlin, Haskell
+* **Environment Detection** – Shows Docker context, Conda/Pixi environments
+* **Time Display** – Current time in HH:MM format
+* **Exit Status** – Visual indicator for command success (➤) or failure
+* **Gruvbox Theme** – Beautiful color scheme that's easy on the eyes
 
 **Installation:**
 ```bash
 # Clone the repo first
 git clone https://github.com/hulryung/ubuntu-dotfile-plus.git
 cd ubuntu-dotfile-plus/scripts
-./install_awesome_prompt.sh
+./install_starship.sh
 ```
 
 **Manual Installation:**
 ```bash
-# Add to your .bashrc
-echo "source $(pwd)/config/awesome_prompt.sh" >> ~/.bashrc
-source ~/.bashrc
-```
+# Install Starship
+curl -sS https://starship.rs/install.sh | sh
 
-**Example Output:**
-```
-✓ 14:30:25 [L:0.5 M:45.2% D:67%] 🐍(myenv) git:(main)● user@host:/home/user/project
-➤ 
+# Copy configuration
+mkdir -p ~/.config
+cp config/starship.toml ~/.config/starship.toml
+
+# Add to your .bashrc
+echo 'eval "$(starship init bash)"' >> ~/.bashrc
+source ~/.bashrc
 ```
 
 #### Samba Share Setup
